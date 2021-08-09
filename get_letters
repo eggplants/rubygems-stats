@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+
+command -v wget awk >/dev/null|| {
+  echo "install: wget, awk" >&2
+  exit 1
+}
+
+out="${1-letters.csv}"
+echo "letter,pages,gems" > "$out"
+base="https://rubygems.org/gems?letter="
+for i in {a..z};{
+  echo -n "${i}," | tee -a "$out"
+
+  last="$(
+    wget --quiet -O - "${base}${i}"|
+    grep -oP '(?<=page=)[^"]+(?=">Last)'
+  )"
+  echo -n "${last}," | tee -a "$out"
+
+  last_gems="$(
+    wget --quiet -O - "${base}${i}&page=${last}" |
+    grep -c '"gems__gem"'
+  )"
+  bc <<< "$((last-1))*30+${last_gems}" | tee -a "$out"
+}
+awk -F, 'NR>1{a+=$3}END{print "Rubygems.org has "a" gems!"}' "$out"
