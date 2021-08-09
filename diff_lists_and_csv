@@ -1,0 +1,79 @@
+#!/usr/bin/env bash
+
+LIST_ID="1428185251101036545"
+
+_fetch() {
+  q="list_id=${LIST_ID}&count=5000&include_entities=true&skip_status=true"
+  twurl "/1.1/lists/members.json?$q" | jq . >list_members.json
+}
+
+_diff() {
+  diff -i <(echo "$PRE_USERS") <(echo "$NXT_USERS")
+}
+
+_ask_fetch() {
+  echo -n "list_members.json exists. Newly fetch?(y/n): "
+  while :; do
+    read -r s
+    if [ "$s" = "y" ]; then
+      _fetch
+      break
+    elif [ "$s" = "n" ]; then
+      break
+    fi
+    echo -n "Invalid. Enter y or n: "
+  done
+}
+
+_ask_diff() {
+  echo -n "Show diff?(y/n): "
+  while :; do
+    read -r s
+    if [ "$s" = "y" ]; then
+      _diff
+      break
+    elif [ "$s" = "n" ]; then
+      break
+    fi
+    echo -n "Invalid. Enter y or n: "
+  done
+}
+
+main() {
+  command -v twurl >/dev/null || {
+    echo "gem install twurl" >&2
+    exit 1
+  }
+  command -v jq >/dev/null || {
+    echo "install: jq" >&2
+    exit 1
+  }
+
+  [ -f "$HOME/.twurlrc" ] || {
+    # shellcheck disable=SC2016
+    echo 'run:`twurl authorize -u <NAME> -c <CK> -s <CS>`'
+    exit 1
+  }
+
+  [ -f './twitters.csv' ] || {
+    echo "create twitters.csv"
+    exit 1
+  }
+  if [ -f './list_members.json' ]; then
+    [ "$1" = "-y" ] || {
+      _ask_fetch
+    }
+  fi
+  PRE_USERS="$(awk -F, 'NR>2{print$2}' ./twitters.csv | sort)"
+  echo 'twitters.csv: '"$(echo "$PRE_USERS" | wc -l)"' users'
+  NXT_USERS="$(jq -r '.users[].screen_name' list_members.json | sort)"
+  echo 'list_members.json: '"$(echo "$NXT_USERS" | wc -l)"' users'
+  [ "$1" = "-y" ] || {
+    _ask_diff
+    return 0
+  }
+  _diff
+}
+
+main "$@"
+exit "$?"

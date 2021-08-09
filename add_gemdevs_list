@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+
+LIST_ID="1428185251101036545"
+LOG_NAME='add.log'
+
+: >"$LOG_NAME"
+
+command -v twurl >/dev/null || {
+  # shellcheck disable=SC2016
+  echo 'install: `gem install twurl`' >&2
+  exit 1
+}
+
+command -v jq >/dev/null || {
+  echo 'install: jq' >&2
+  exit 1
+}
+
+[ -f "$HOME/.twurlrc" ] || {
+  # shellcheck disable=SC2016
+  echo 'run:`twurl authorize -u <NAME> -c <CK> -s <CS>`' >&2
+  exit 1
+}
+
+[ -f './twitters.csv' ] || {
+  echo "create twitters.csv" >&2
+  exit 1
+}
+
+[ -f './exist.txt' ] && {
+  shuf exist.txt | xargs -n100 | tr \  , |
+    while read -r i; do
+      (
+        twurl -X POST "/1.1/lists/members/create_all.json" \
+          -d "screen_name=${i}&list_id=${LIST_ID}" -t 2>>"$LOG_NAME"
+        echo
+      ) |
+        sed -nE 's/.*("member_count":[0-9]+).*/\1/p' | tee -a "$LOG_NAME"
+      s="$((RANDOM % 60 + 60))"
+      echo "sleep: ${s}s"
+      sleep "$s"
+    done
+  exit 0
+}
+
+awk -F, 'NR>2{print$2}' ./twitters.csv >/tmp/_a
+twurl "/1.1/lists/members.json?list_id=${LIST_ID}&count=5000" |
+  jq -r '.users[].screen_name' >/tmp/_b
+
+c=1
+sort /tmp/_a /tmp/_b /tmp/_b | uniq -u | xargs -n100 |
+  shuf | tr ' ' ',' | while read -r i; do
+  echo "[$c]: {{{$i}}}" | tee -a "$LOG_NAME"
+  (
+    twurl -X POST "/1.1/lists/members/create_all.json" \
+      -d "list_id=${LIST_ID}&screen_name=${i}" -t 2>>"$LOG_NAME"
+    echo
+  ) |
+    sed -nE 's/.*("member_count":[0-9]+).*/\1/p' | tee -a "$LOG_NAME"
+  s="$((RANDOM % 60 + 60))"
+  echo "sleep: ${s}s"
+  sleep "${s}"
+  ((c++))
+done

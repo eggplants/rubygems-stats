@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+
+LIST_ID="1428185251101036545"
+
+[ -f "./twitters.csv" ] || {
+  echo "twitters.csv is not found." >&2
+  exit 1
+}
+
+: >exist.txt
+
+awk -F, 'NR>2{print$2}' ./twitters.csv >/tmp/_a
+echo "[twitters.csv]: $(wc </tmp/_a -l) ids"
+twurl "/1.1/lists/members.json?list_id=${LIST_ID}&count=5000" |
+  jq -r '.users[].screen_name' >/tmp/_b
+echo "[members on list]: $(wc </tmp/_b -l) ids"
+sort /tmp/_a /tmp/_b /tmp/_b | uniq -u >/tmp/_c
+c_len="$(wc </tmp/_c -l)"
+echo "[not on list]: ${c_len} ids"
+
+echo "[chech existence]:"
+dl=0
+ex=0
+c=1
+while read -r i; do
+  echo -n "[${c}/${c_len}]: ${i}"
+  if twurl '/1.1/users/show.json?screen_name='"$i" |
+    grep '^{"errors":' -q; then
+    echo "=>deleted!"
+    ((dl++))
+  else
+    echo "=>exists!"
+    echo "$i" >>exist.txt
+    ((ex++))
+  fi
+  sleep "$((RANDOM % 2 + 1))"
+  ((c++))
+done </tmp/_c
+echo "[checked]: ${c_len} ids"
+echo "[deleted]: ${dl} ids"
+echo "[exists]: ${ex} ids"

@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+
+authors_file="gem_authors.txt"
+[ -f "$authors_file" ] || {
+  echo "authors' file is not found." >&2
+  exit 1
+}
+
+command -v curl >/dev/null || {
+  echo "install: curl"
+  exit 1
+}
+
+out="twitters.csv"
+
+echo "user,twitter" >"$out"
+
+sed -r '/\/[0-9]+$/d' "$authors_file" | while read -r user; do
+  l="$(
+    curl -s "$user" |
+      grep -oP '(?<=href="https://twitter.com/)[^"]+(?=">)'
+  )"
+  [ -n "$l" ] && echo "$(basename "$user"),${l}" | tee -a "$out"
+done

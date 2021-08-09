@@ -5,35 +5,37 @@ command -v curl >/dev/null || {
   exit 1
 }
 
-out="${1-gem_authors.csv}"
-echo gem,name > "$out"
+out="gem_authors.txt"
+echo gem,name >"$out"
 base="https://rubygems.org"
-for l in {a..z};{
+for l in {a..z}; do
   echo "[+]letter: $l"
   url="${base}/gems?letter=$l"
   last="$(
     curl -s "$url" | tac |
-    grep -oPm1 '(?<=&amp;page=)\d+'
+      grep -oPm1 '(?<=&amp;page=)\d+'
   )"
   gems=()
-  for n in $(seq "$last");{
+  for n in $(seq "$last"); do
     printf "[+]%04d/%04d pages\r" "$n" "$last"
-    gems+=($(
-      curl -s "${url}&page=${n}"|
-      grep -oP '(?<=</a><a class="gems__gem" href=")/gems/.*(?=">)'
-    ))
-  }
+    while IFS='' read -r line; do
+      gem+=("$line")
+    done < <(
+      curl -s "${url}&page=${n}" |
+        grep -oP '(?<=</a><a class="gems__gem" href=")/gems/.*(?=">)'
+    )
+  done
   echo
   i=0
   gems_len="${#gems[@]}"
-  for g in "${gems[@]}";{
+  for g in "${gems[@]}"; do
     printf "[+]%04d/%04d gems\r" "$((i++))" "$gems_len"
     {
-      echo -n "${g},"
       curl -s "${base}${g}" |
-      grep -oP '(?<=href="/profiles/)[^"]+(?=")'
-    } >>"$out"
-  }
+        grep -oP '(?<=href=")/profiles/[^"]+(?=")'
+    } | sed 's_^_https://rubygems.org_g' >>"$out"
+  done
   echo
-}
-echo "[+]done: authors have been found!"
+done
+sort "$out" | uniq 1<>"$out"
+echo "[+]done: $(wc <"$out" -l) authors have been found!"
