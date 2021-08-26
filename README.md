@@ -41,5 +41,5 @@ gem install twurl
 
 ## Stats
 
-- At 2021/08/13
-- 167470 Gems, 58314 Users, 4453 Twitter accounts
+- At 2021/08/27
+- 167661 Gems, 56255 Users, 4133 Twitter accounts (excluded 346 deleted accounts)
