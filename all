@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+
+set -e
+
+command -v apt >/dev/null || {
+  echo "require: apt" >&2
+  exit 1
+}
+
+command -v gem >/dev/null || {
+  echo "require: gem" >&2
+  exit 1
+}
+
+echo "[Install deps]"
+
+echo "[curl,diffutils,jq]"
+sudo apt install -y -qq curl diffutils jq
+
+echo "[twurl]"
+
+command -v twurl >/dev/null || {
+  gem install -N -q twurl
+  # shellcheck disable=SC2016
+  echo 'run:`twurl authorize -u <NAME> -c <CK> -s <CS>`' >&2
+  exit 1
+}
+
+[ -f "$HOME/.twurlrc" ] || {
+  # shellcheck disable=SC2016
+  echo 'run:`twurl authorize -u <NAME> -c <CK> -s <CS>`' >&2
+  exit 1
+}
+
+echo "[Run]"
+echo "[get_authors]"
+./get_authors # ()->gem_authors.txt
+echo "[get_letters]"
+./get_letters # ()->letters.csv
+echo "[get_twitter_account]"
+./get_twitter_account # gem_authors.txt->twitters.csv
+echo "[check_exist]"
+./check_exist # twitters.csv->exist.txt
+echo "[add_gemdevs_list]"
+./add_gemdevs_list # twitters.csv,exist.txt->add.log
+echo "[diff_lists_add_csv]"
+./diff_lists_and_csv -y # twitters.csv->list_members.json
