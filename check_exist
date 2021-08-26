@@ -14,20 +14,26 @@ echo "[twitters.csv]: $(wc </tmp/_a -l) ids"
 twurl "/1.1/lists/members.json?list_id=${LIST_ID}&count=5000" |
   jq -r '.users[].screen_name' >/tmp/_b
 echo "[members on list]: $(wc </tmp/_b -l) ids"
-sort /tmp/_a /tmp/_b /tmp/_b | uniq -u >/tmp/_c
+sort /tmp/_a /tmp/_b /tmp/_b | uniq -u -i >/tmp/_c
 c_len="$(wc </tmp/_c -l)"
 echo "[not on list]: ${c_len} ids"
 
 echo "[chech existence]:"
 dl=0
+pr=0
 ex=0
 c=1
 while read -r i; do
   echo -n "[${c}/${c_len}]: ${i}"
-  if twurl '/1.1/users/show.json?screen_name='"$i" |
-    grep '^{"errors":' -q; then
+  twurl '/1.1/users/show.json?screen_name='"$i" >/tmp/_d
+  if grep '^{"errors":' /tmp/_d -q; then
     echo "=>deleted!"
+    echo "$i" >>deleted.txt
     ((dl++))
+  elif grep ',"protected":true,' /tmp/_d -q; then
+    echo "=>protected!"
+    echo "$i" >>protected.txt
+    ((pr++))
   else
     echo "=>exists!"
     echo "$i" >>exist.txt
@@ -38,4 +44,5 @@ while read -r i; do
 done </tmp/_c
 echo "[checked]: ${c_len} ids"
 echo "[deleted]: ${dl} ids"
+echo "[protected]: ${pr} ids"
 echo "[exists]: ${ex} ids"

@@ -26,6 +26,8 @@
   - `list_members.json`: Acquired List registered user information
 
 - `check_exist`: Confirm the existence of the account listed in `twitters.csv`
+  - `deleted.txt`: Accounts that seem to be deleted
+  - `protected.txt`: Accounts that seem to be protected
   - `exist.txt`: Accounts that existed and are not on the [List](https://twitter.com/i/lists/1428185251101036545)
 
 ## Requirements

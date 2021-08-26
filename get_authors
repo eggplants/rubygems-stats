@@ -6,7 +6,6 @@ command -v curl >/dev/null || {
 }
 
 out="gem_authors.txt"
-echo gem,name >"$out"
 base="https://rubygems.org"
 for l in {a..z}; do
   echo "[+]letter: $l"
@@ -31,12 +30,13 @@ for l in {a..z}; do
   for g in "${gems[@]}"; do
     printf "[+]%04d/%04d gems\r" "$i" "$gems_len"
     curl -A "$(shuf -n1 ua.txt)" -s "${base}${g}"  |
-        sed -nE 's_.*href="(/profiles/[^"]+)".*_https://rubygems.org\1_p' \
+        sed -nE 's_.*href="(/profiles/[^"]+)".*_\1_p' \
         >>"$out"
     ((i++))
   done
   echo
 done
-sort "$out" | uniq 1<>"$out"
+sort "$out" | uniq | sed "s_^_https://rubygems.org_" >/tmp/_
+mv /tmp/_ "$out"
 au_len="$(wc <"$out" -l)"
-echo "[+]done: $((au_len-1)) authors have been found!"
+echo "[+]done: ${au_len} authors have been found!"

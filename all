@@ -32,16 +32,35 @@ command -v twurl >/dev/null || {
   exit 1
 }
 
+d() {
+  echo "[time]: $(LANG=en date +%Y-%m-%d\ %H:%M:%S.%N)"
+}
+
 echo "[Run]"
+
+d
 echo "[get_authors]"
-./get_authors # ()->gem_authors.txt
+./get_authors | sed -u 's/$/&'$'\e\[A/' # ()->gem_authors.txt
+
+d
 echo "[get_letters]"
-./get_letters # ()->letters.csv
+./get_letters | sed -u 's/$/&'$'\e\[A/' # ()->letters.csv
+
+d
 echo "[get_twitter_account]"
-./get_twitter_account # gem_authors.txt->twitters.csv
+./get_twitter_account | sed -u 's/$/&'$'\e\[A/' # gem_authors.txt->twitters.csv
+
+d
 echo "[check_exist]"
-./check_exist # twitters.csv->exist.txt
+./check_exist | sed -u 's/$/&'$'\e\[A/' # twitters.csv->exist.txt
+
+d
 echo "[add_gemdevs_list]"
-./add_gemdevs_list # twitters.csv,exist.txt->add.log
+./add_gemdevs_list | sed -u 's/$/&'$'\e\[A/' # twitters.csv,exist.txt->add.log
+
+d
 echo "[diff_lists_add_csv]"
-./diff_lists_and_csv -y # twitters.csv->list_members.json
+./diff_lists_and_csv -y | sed -u 's/$/&'$'\e\[A/' # twitters.csv->list_members.json
+
+d
+echo "[done!]"
