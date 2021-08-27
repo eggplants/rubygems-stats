@@ -44,6 +44,9 @@ d() {
 
 echo "[Run]"
 
+mkdir -p ../data
+
+cp ./data/* ./src
 cd ./src
 
 d
@@ -70,7 +73,6 @@ d
 echo "[diff_lists_add_csv]"
 ./diff_lists_and_csv -y | sed -u 's/$/&'$'\e\[A/' # twitters.csv->list_members.json
 
-mkdir -p ../data
 mv deleted.txt exist.txt gem_authors.txt \
   letters.csv protected.txt twitters.csv add.log ../data
 cd ..
