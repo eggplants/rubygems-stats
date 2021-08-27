@@ -12,6 +12,12 @@ command -v gem >/dev/null || {
   exit 1
 }
 
+[ -d "./src" ] || {
+  # shellcheck disable=SC2016
+  echo '"src" dir is missing' >&2
+  exit 1
+}
+
 echo "[Install deps]"
 
 echo "[curl,diffutils,jq]"
@@ -38,6 +44,8 @@ d() {
 
 echo "[Run]"
 
+cd ./src
+
 d
 echo "[get_authors]"
 ./get_authors | sed -u 's/$/&'$'\e\[A/' # ()->gem_authors.txt
@@ -61,6 +69,11 @@ echo "[add_gemdevs_list]"
 d
 echo "[diff_lists_add_csv]"
 ./diff_lists_and_csv -y | sed -u 's/$/&'$'\e\[A/' # twitters.csv->list_members.json
+
+mkdir -p ../data
+mv deleted.txt exist.txt gem_authors.txt \
+  letters.csv protected.txt twitters.csv add.log ../data
+cd ..
 
 d
 echo "[done!]"
