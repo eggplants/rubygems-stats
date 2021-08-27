@@ -5,6 +5,11 @@ command -v curl >/dev/null || {
   exit 1
 }
 
+[ -f "ua.txt" ] || {
+  echo "ua.txt is not found." >&2
+  exit 1
+}
+
 out="${1-letters.csv}"
 echo "letter,pages,gems" >"$out"
 base="https://rubygems.org/gems?letter="
@@ -12,13 +17,13 @@ for i in {a..z}; do
   echo -n "${i}," | tee -a "$out"
 
   last="$(
-    curl -s "${base}${i}" |
+    curl -A "$(shuf -n1 ua.txt)" -s "${base}${i}" |
       sed -nE 's/^.*page=([^"]+)">Last.*$/\1/p'
   )"
   echo -n "${last}," | tee -a "$out"
 
   last_gems="$(
-    curl -s "${base}${i}&page=${last}" |
+    curl -A "$(shuf -n1 ua.txt)" -s "${base}${i}&page=${last}" |
       grep -c '"gems__gem"'
   )"
   bc <<<"$((last - 1))*30+${last_gems}" | tee -a "$out"

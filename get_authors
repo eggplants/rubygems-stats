@@ -5,6 +5,11 @@ command -v curl >/dev/null || {
   exit 1
 }
 
+[ -f "ua.txt" ] || {
+  echo "ua.txt is not found." >&2
+  exit 1
+}
+
 out="gem_authors.txt"
 base="https://rubygems.org"
 for l in {a..z}; do
